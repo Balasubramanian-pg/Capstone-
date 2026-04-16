@@ -544,8 +544,6 @@ SELECT * FROM tier_aggregation ORDER BY total_paid DESC;
 **Production Note**:
 - Formulary alignment is critical for contract reporting. Misalignment triggers payer disputes.
 
----
-
 ## SCENARIO 5: SARGABILITY & CLAIM REVERSAL HANDLING
 
 **Assumptions**:
