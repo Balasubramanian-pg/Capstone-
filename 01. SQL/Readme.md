@@ -907,8 +907,6 @@ ORDER BY median_latency_days DESC;
 **Production Note**:
 - PA latency impacts CMS Star Ratings and member satisfaction. Monitor weekly.
 
----
-
 ## SCENARIO 11: ELT PATTERNS & INCREMENTAL CLAIMS ADJUDICATION
 
 **Assumptions**:
@@ -979,8 +977,6 @@ ALTER TASK daily_plan_agg RESUME;
 **Production Note**:
 - Stream offset tracking critical. Monitor for drift. Reinitialize if corrupted.
 
----
-
 ## SCENARIO 12: COST AWARENESS & OBSERVABILITY
 
 **Assumptions**:
@@ -1030,8 +1026,6 @@ ORDER BY fill_month DESC, sponsor_type;
 - Use `ALTER SESSION SET USE_CACHED_RESULT = TRUE;` (default) to leverage cache.
 - Tagging enables finance tracking. Dashboard can filter by `QUERY_TAG`.
 
----
-
 ## SCENARIO 13: GOVERNANCE & HIPAA-COMPLIANT ROW-LEVEL SECURITY
 
 **Assumptions**:
@@ -1080,8 +1074,6 @@ ALTER TABLE FACT_PHARMACY_CLAIMS MODIFY COLUMN prescriber_npi SET MASKING POLICY
 
 **Production Note**:
 - HIPAA requires audit logs of access. Enable `ACCESS_HISTORY` monitoring.
-
----
 
 ## SCENARIO 14: REAL-WORLD EVIDENCE COHORT GENERATION
 
@@ -1152,8 +1144,6 @@ ORDER BY g.init_date;
 **Production Note**:
 - RWE cohorts used for outcomes research. Ensure IRB compliance and data de-identification.
 
----
-
 ## SCENARIO 15: PRODUCTION DEBUGGING & POSTMORTEM SIMULATION
 
 **Assumptions**:
@@ -1202,8 +1192,6 @@ ORDER BY service_month DESC;
 **Production Note**:
 - Financial dashboards require resilient date logic. Never rely on single timestamp without ingestion buffer.
 
----
-
 ## PRODUCTION READINESS CHECKLIST (ALL SCENARIOS)
 
 1. **Logical Correctness**: Output matches known benchmarks. Edge cases handled explicitly.
@@ -1214,8 +1202,6 @@ ORDER BY service_month DESC;
 6. **Governance**: Row access policies, dynamic masking, RBAC alignment verified. HIPAA compliance noted.
 7. **Testing**: Validation steps documented. Cross-reference sources identified.
 8. **Documentation**: Assumptions stated. Trade-offs explained. Postmortem template ready.
-
----
 
 This capstone forces the new joiner to confront architecture, cost, ambiguity, and production reality in the pharma domain. Each scenario builds a muscle: correctness, performance, idempotency, governance, debugging, and communication. SQL is not syntax here. It is a negotiation with data, regulation, and scale.
 
@@ -1706,8 +1692,6 @@ ORDER BY pdc DESC;
 **Production Note**:
 - PDC is standard for CMS Star Ratings. Ensure capping at 1.0 aligns with regulatory definitions.
 
----
-
 ## SCENARIO 4: SLOWLY CHANGING DIMENSIONS & FORMULARY ALIGNMENT
 
 **Assumptions**:
@@ -1767,8 +1751,6 @@ SELECT * FROM tier_aggregation ORDER BY total_paid DESC;
 
 **Production Note**:
 - Formulary alignment is critical for contract reporting. Misalignment triggers payer disputes.
-
----
 
 ## SCENARIO 5: SARGABILITY & CLAIM REVERSAL HANDLING
 
@@ -1832,8 +1814,6 @@ ORDER BY total_net_impact DESC;
 
 **Production Note**:
 - Reversal logic must handle late-arriving reversals. Stream-based pipelines recommended for real-time.
-
----
 
 ## SCENARIO 6: NDC SUPERSESSION & PRODUCT CONTINUITY
 
@@ -1899,8 +1879,6 @@ ORDER BY total_quantity DESC;
 **Production Note**:
 - NDC mapping must align with FDA Orange Book updates. Schedule quarterly refresh.
 
----
-
 ## SCENARIO 7: DIR FEE LAG & RETROACTIVE ADJUSTMENTS
 
 **Assumptions**:
@@ -1957,8 +1935,6 @@ SELECT * FROM net_revenue ORDER BY service_month, net_revenue DESC;
 
 **Production Note**:
 - DIR fee reconciliation requires audit trail. Log `received_date` vs `service_month` delta.
-
----
 
 ## SCENARIO 8: REBATE WATERFALL & CONTRACT ALIGNMENT
 
@@ -2023,8 +1999,6 @@ ORDER BY total_rebate DESC;
 **Production Note**:
 - Rebate waterfall must align with PBM contract terms. Audit log required for compliance.
 
----
-
 ## SCENARIO 9: 340B COMPLIANCE & ELIGIBILITY VALIDATION
 
 **Assumptions**:
@@ -2084,8 +2058,6 @@ ORDER BY flagged_fills DESC;
 **Production Note**:
 - 340B compliance triggers HRSA audits. False positives costly. Validate eligibility logic quarterly.
 
----
-
 ## SCENARIO 10: PRIOR AUTHORIZATION ROUTING & DECISION LATENCY
 
 **Assumptions**:
@@ -2142,8 +2114,6 @@ ORDER BY median_latency_days DESC;
 
 **Production Note**:
 - PA latency impacts CMS Star Ratings and member satisfaction. Monitor weekly.
-
----
 
 ## SCENARIO 11: ELT PATTERNS & INCREMENTAL CLAIMS ADJUDICATION
 
@@ -2215,8 +2185,6 @@ ALTER TASK daily_plan_agg RESUME;
 **Production Note**:
 - Stream offset tracking critical. Monitor for drift. Reinitialize if corrupted.
 
----
-
 ## SCENARIO 12: COST AWARENESS & OBSERVABILITY
 
 **Assumptions**:
@@ -2266,8 +2234,6 @@ ORDER BY fill_month DESC, sponsor_type;
 - Use `ALTER SESSION SET USE_CACHED_RESULT = TRUE;` (default) to leverage cache.
 - Tagging enables finance tracking. Dashboard can filter by `QUERY_TAG`.
 
----
-
 ## SCENARIO 13: GOVERNANCE & HIPAA-COMPLIANT ROW-LEVEL SECURITY
 
 **Assumptions**:
@@ -2316,8 +2282,6 @@ ALTER TABLE FACT_PHARMACY_CLAIMS MODIFY COLUMN prescriber_npi SET MASKING POLICY
 
 **Production Note**:
 - HIPAA requires audit logs of access. Enable `ACCESS_HISTORY` monitoring.
-
----
 
 ## SCENARIO 14: REAL-WORLD EVIDENCE COHORT GENERATION
 
@@ -2387,8 +2351,6 @@ ORDER BY g.init_date;
 
 **Production Note**:
 - RWE cohorts used for outcomes research. Ensure IRB compliance and data de-identification.
-
----
 
 ## SCENARIO 15: PRODUCTION DEBUGGING & POSTMORTEM SIMULATION
 
