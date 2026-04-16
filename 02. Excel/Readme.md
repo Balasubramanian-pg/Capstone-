@@ -110,8 +110,6 @@ Each scenario builds on the previous. Success requires correctness, performance,
 - No hard-coded paths or dates unless explicitly required.
 - PHI/PII handling explicitly noted where applicable.
 
----
-
 # ARTEFACT 2: COMPLETE SOLUTIONS, FORMULAS, ASSUMPTIONS, EXPLANATIONS
 
 ## SCENARIO 1: POWER QUERY INGESTION & CLEANUP
@@ -138,8 +136,6 @@ Each scenario builds on the previous. Success requires correctness, performance,
 
 **Excel Performance Note**:
 - Store source file in same folder as workbook. Use relative paths in PQ. Refresh via `Data > Refresh All`.
-
----
 
 ## SCENARIO 2: FORMULARY TIER MAPPING & LOOKUP ROBUSTNESS
 
