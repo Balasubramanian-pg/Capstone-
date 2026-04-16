@@ -1562,8 +1562,6 @@ ORDER BY fill_month DESC, sponsor_type;
 **Production Note**:
 - Avoid joining `DIM_MEMBERS` at this stage. Membership status changes introduce fan-out if not aligned to claim date.
 
----
-
 ## SCENARIO 2: CARDINALITY & FAN-OUT TRAPS
 
 **Assumptions**:
