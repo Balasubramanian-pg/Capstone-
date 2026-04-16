@@ -1,2 +1,2 @@
-# Capstone-
+# Capstone
 SQL &amp; Excel
