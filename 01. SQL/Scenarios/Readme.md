@@ -1,4 +1,6 @@
-## 4. CAPSTONE SCENARIOS (15, INCREMENTAL DIFFICULTY)Each scenario builds on the previous. Success requires correctness, performance, maintainability, compliance awareness, and business alignment.
+## 4. CAPSTONE SCENARIOS (15, INCREMENTAL DIFFICULTY)
+
+Each scenario builds on the previous. Success requires correctness, performance, maintainability, compliance awareness, and business alignment.
 
 SCENARIO 1: BASELINE METRIC VALIDATION**Objective**: 
 Calculate monthly gross drug spend, payer-paid amount, and member out-of-pocket by plan sponsor type for the last 12 months.**Constraints**: Exclude reversed claims. Handle NULL `copay_amount` and `coinsurance_amount`. Round to two decimals.**Success Criteria**: Accurate aggregation, correct date bucketing, zero duplicate inflation from joins, clear output schema.**Known Pitfall**: Joining `FACT_PHARMACY_CLAIMS` with `DIM_MEMBERS` before aggregation multiplies rows if membership status changes mid-month.
