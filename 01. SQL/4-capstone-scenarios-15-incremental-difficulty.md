@@ -1,0 +1,93 @@
+## 4. CAPSTONE SCENARIOS (15, INCREMENTAL DIFFICULTY)
+
+Each scenario builds on the previous. Success requires correctness, performance, maintainability, compliance awareness, and business alignment.
+
+### SCENARIO 1: BASELINE METRIC VALIDATION
+**Objective**: Calculate monthly gross drug spend, payer-paid amount, and member out-of-pocket by plan sponsor type for the last 12 months.
+**Constraints**: Exclude reversed claims. Handle NULL `copay_amount` and `coinsurance_amount`. Round to two decimals.
+**Success Criteria**: Accurate aggregation, correct date bucketing, zero duplicate inflation from joins, clear output schema.
+**Known Pitfall**: Joining `FACT_PHARMACY_CLAIMS` with `DIM_MEMBERS` before aggregation multiplies rows if membership status changes mid-month.
+
+### SCENARIO 2: CARDINALITY & FAN-OUT TRAPS
+**Objective**: Calculate average days supply per prescriber specialty for brand vs generic drugs in Q3 2023.
+**Constraints**: Use `FACT_PHARMACY_CLAIMS`, `DIM_DRUG_MASTER`, `DIM_PROVIDERS`. Exclude mail order. Include only adjudicated claims.
+**Success Criteria**: Correct specialty grouping, accurate brand/generic classification, proper NULL handling for missing prescriber data.
+**Known Pitfall**: Using `COUNT(DISTINCT claim_id)` vs `COUNT(claim_id)` when duplicate adjudications exist. Pre-aggregating before filtering distorts averages.
+
+### SCENARIO 3: WINDOW FUNCTIONS & ADHERENCE COHORTS
+**Objective**: Identify members who filled a maintenance medication for at least 6 consecutive months, and calculate their Proportion of Days Covered (PDC) for the observation window.
+**Constraints**: Only include `drug_class` IN (statins, ACE_inhibitors, ARBs, diabetes_oral). Exclude specialty drugs. PDC = days covered / 180 days.
+**Success Criteria**: Correct consecutive month logic, accurate PDC calculation, exclusion of acute medications, handling of overlapping fills.
+**Known Pitfall**: `LAG()`/`LEAD()` misaligned on fill dates. Overlapping fills inflate days covered. Failing to cap PDC at 1.0.
+
+### SCENARIO 4: SLOWLY CHANGING DIMENSIONS & FORMULARY ALIGNMENT
+**Objective**: Calculate total paid amount per formulary tier for Q2 2023, using the tier that was active at the time of each claim's fill date.
+**Constraints**: `DIM_FORMULARY` uses Type 2 SCD (`effective_start_date`, `effective_end_date`, `is_current`). Match `fill_date` to correct tier.
+**Success Criteria**: Historical accuracy, correct date overlap logic, no double-counting, explicit handling of excluded tier claims.
+**Known Pitfall**: Using current tier instead of historical tier. Misaligned date ranges produce phantom spend or missing allocations.
+
+### SCENARIO 5: SARGABILITY & CLAIM REVERSAL HANDLING
+**Objective**: Find all pharmacy claims in December 2023 where the original claim was later reversed, and calculate the net financial impact per member.
+**Constraints**: Use `FACT_PHARMACY_CLAIMS`. Do not rely on `ORDER BY` unless necessary for pagination. Query must execute under 4 seconds on XS warehouse.
+**Success Criteria**: Query shows partition pruning. Reversal logic correctly pairs original and reversal claims. Financial impact calculated as original minus reversal.
+**Known Pitfall**: Using `TO_DATE()` or `DATE_TRUNC()` on `adjudication_date` in WHERE clause breaks pruning. Self-join on `claim_id` vs `reversal_claim_id` causes fan-out.
+
+### SCENARIO 6: NDC SUPERSESSION & PRODUCT CONTINUITY
+**Objective**: Map historical claims with superseded NDCs to their current active NDCs, then calculate total quantity dispensed by GPI for 2023.
+**Constraints**: Use `DIM_NDC_SUPERSESSION`. Handle chains (A->B, B->C). Exclude discontinued drugs with no supersession path.
+**Success Criteria**: Accurate recursive or iterative mapping, correct GPI grouping, no double-counting, explicit handling of missing mappings.
+**Known Pitfall**: Assuming one-to-one mapping. Failing to handle supersession chains. Joining before aggregation inflates scans.
+
+### SCENARIO 7: DIR FEE LAG & RETROACTIVE ADJUSTMENTS
+**Objective**: Calculate net pharmacy revenue per month for Q1 2024, incorporating late-arriving DIR fees that adjust prior service months.
+**Constraints**: Use `FACT_PHARMACY_CLAIMS`, `FACT_DIR_FEES`. Match DIR fees to `service_month`, not `received_date`. Handle NULL DIR records.
+**Success Criteria**: Accurate monthly alignment, correct retroactive adjustment logic, clear separation of gross vs net, explicit lag handling.
+**Known Pitfall**: Joining DIR fees on `received_date` instead of `service_month`. Double-counting adjustments when DIR files arrive in batches.
+
+### SCENARIO 8: REBATE WATERFALL & CONTRACT ALIGNMENT
+**Objective**: Calculate total eligible rebate amount per manufacturer for Q4 2023, applying fixed, percentage, and tiered volume contract logic.
+**Constraints**: Use `FACT_PHARMACY_CLAIMS`, `FACT_REBATE_CONTRACTS`. Apply tier thresholds only when quantity met. Default missing contracts to 0.
+**Success Criteria**: Correct contract matching, accurate tier evaluation, proper percentage vs fixed calculation, explicit null handling.
+**Known Pitfall**: Joining claims to contracts without date alignment. Misapplying tier logic when quantity falls short. Ignoring manufacturer contract gaps.
+
+### SCENARIO 9: 340B COMPLIANCE & ELIGIBILITY VALIDATION
+**Objective**: Identify fills at 340B-covered entities where the member was not eligible for 340B pricing on the fill date.
+**Constraints**: Use `FACT_PHARMACY_CLAIMS`, `FACT_340B_ELIGIBILITY`, `DIM_MEMBERS`. Match `fill_date` to eligibility window. Flag non-compliant fills.
+**Success Criteria**: Accurate date overlap logic, correct entity/member eligibility matching, clear flagging, explicit handling of missing eligibility records.
+**Known Pitfall**: Using current eligibility status instead of historical. Joining without date alignment produces false compliance flags.
+
+### SCENARIO 10: PRIOR AUTHORIZATION ROUTING & DECISION LATENCY
+**Objective**: Calculate median days from PA request to decision, by drug class and prescriber specialty, for Q3 2023.
+**Constraints**: Use `FACT_PRIOR_AUTHORIZATIONS`, `DIM_DRUG_MASTER`, `DIM_PROVIDERS`. Exclude expired requests. Handle NULL decision dates.
+**Success Criteria**: Accurate latency calculation, correct grouping, proper NULL/exclusion handling, median calculation with window functions.
+**Known Pitfall**: Using `AVG()` instead of `PERCENTILE_CONT()`. Including expired requests skews latency. Failing to align PA NDC to drug class.
+
+### SCENARIO 11: ELT PATTERNS & INCREMENTAL CLAIMS ADJUDICATION
+**Objective**: Design a stream-and-task pipeline that captures new/updated `FACT_PHARMACY_CLAIMS`, aggregates daily net receipts by plan, and loads into `FACT_DAILY_PLAN_SUMMARY`.
+**Constraints**: Use Snowflake Streams, Tasks, MERGE. Ensure idempotency. Handle late-arriving reversals that modify prior day totals.
+**Success Criteria**: Idempotent load logic, correct stream offset tracking, proper MERGE upsert behavior, explicit error handling for task failures.
+**Known Pitfall**: Streams do not automatically handle deletes/reversals without explicit MERGE logic. Task scheduling must account for dependency order.
+
+### SCENARIO 12: COST AWARENESS & OBSERVABILITY
+**Objective**: Rewrite Scenario 1 to reduce credit consumption by at least 45% without changing output. Document before/after EXPLAIN plans and cost delta.
+**Constraints**: Use result caching awareness, predicate pushdown, selective column projection, clustering key optimization. Apply query tagging.
+**Success Criteria**: Measurable credit reduction, clear optimization rationale, correct tagging implementation, no logical regression.
+**Known Pitfall**: Over-optimizing for speed at cost of correctness. Ignoring that SELECT * or unnecessary joins increase micro-partition scanning.
+
+### SCENARIO 13: GOVERNANCE & HIPAA-COMPLIANT ROW-LEVEL SECURITY
+**Objective**: Implement a row access policy that restricts regional pharmacy analysts to only see claims from their assigned `state`. Apply dynamic masking to `member_id`, `dob`, and `prescriber_npi` for non-compliance roles.
+**Constraints**: Use Snowflake Row Access Policies and Dynamic Data Masking. Ensure policy evaluation does not block BI dashboard caching.
+**Success Criteria**: Correct policy binding, role-based visibility, masked output for unauthorized roles, no performance degradation.
+**Known Pitfall**: Binding policies without testing role contexts. Masking functions that return NULL break dashboard filters. PHI columns exposed in intermediate CTEs.
+
+### SCENARIO 14: REAL-WORLD EVIDENCE COHORT GENERATION
+**Objective**: Identify patients who initiated a GLP-1 agonist in 2023, had at least one prior diagnosis of T2DM (ICD-10 E11%), and did not switch to insulin within 180 days.
+**Constraints**: Use `FACT_PHARMACY_CLAIMS`, `FACT_MEDICAL_CLAIMS`, `DIM_DRUG_MASTER`. Align pharmacy and medical claims by member and date window.
+**Success Criteria**: Accurate initiation logic, correct diagnosis window, proper exclusion criteria, explicit handling of missing medical claims.
+**Known Pitfall**: Joining claims without date boundaries causes cartesian explosion. Failing to account for insulin bridge therapy. Misclassifying GLP-1 formulations.
+
+### SCENARIO 15: PRODUCTION DEBUGGING & POSTMORTEM SIMULATION
+**Objective**: You inherit a failing monthly P&L dashboard. The query returns $0 DIR fee adjustments for December 2023. Diagnose the root cause, fix the logic, and write a blameless postmortem.
+**Constraints**: The query uses `WHERE received_date >= CURRENT_DATE - 3`. Upstream DIR feeds were delayed 19 days. Late-arriving fees reference `service_month`, not `received_date`.
+**Success Criteria**: Correct diagnosis, fixed logic using service month alignment and ingestion window, postmortem documenting prevention steps, testing validation.
+**Known Pitfall**: Blaming data engineering instead of designing resilient filters. Using `CURRENT_DATE` without delay buffers or service month alignment.
